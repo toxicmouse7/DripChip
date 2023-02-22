@@ -1,0 +1,19 @@
+﻿version: '3.9'
+
+services:
+  dripchip:
+    image: dripchip
+    ports:
+      - "5038:80"
+
+  tests:
+    image: mrexpen/planet_olymp_phase1
+    pull_policy: always
+    ports:
+      - "8090:8080"
+    depends_on:
+      - dripchip
+    environment:
+      SERVER_URL: http://dripchip:80
+      STAGE: 1
+    
