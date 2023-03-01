@@ -1,6 +1,6 @@
 ﻿namespace DripChip.Models.Entities;
 
-public class Animal
+public class Animal : Entity
 {
     public enum Gender
     {
@@ -15,7 +15,6 @@ public class Animal
         Dead
     }
     
-    public uint Id { get; set; }
     public AnimalType[] Types { get; set; } = null!;
     public float Weight { get; set; }
     public float Length { get; set; }

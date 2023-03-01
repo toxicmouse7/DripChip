@@ -4,21 +4,41 @@ using DripChip.Models.SearchInformation;
 
 namespace DripChip.Services;
 
-public class AnimalsService : IAnimalsService
+public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, AnimalsSearchInformation>
 {
     private readonly ApplicationContext _applicationContext;
 
-    public AnimalsService(ApplicationContext applicationContext)
+    public AnimalsRepository(ApplicationContext applicationContext)
     {
         _applicationContext = applicationContext;
     }
 
-    public Animal? GetAnimalInformation(uint id)
+    public Animal? Get(uint id)
     {
         return _applicationContext.Animals.Find(id);
     }
 
-    public Animal[] SearchAnimals(AnimalsSearchInformation animalsSearchInformation, int from, int size)
+    public Animal? Get(Func<Animal, bool> predicate)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Animal Update(Animal entity)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Animal Create(Animal entity)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Delete(Animal entity)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<Animal> Search(AnimalsSearchInformation animalsSearchInformation, int from, int size)
     {
         var animals = _applicationContext.Animals;
 
@@ -37,6 +57,6 @@ public class AnimalsService : IAnimalsService
                 animal => animal.AnimalLifeStatus == animalsSearchInformation.LifeStatus)
             .WhereIf(animalsSearchInformation.Gender != null,
                 animal => animal.AnimalGender == animalsSearchInformation.Gender)
-            .OrderBy(animal => animal.Id).Skip(from).Take(size).ToArray();
+            .OrderBy(animal => animal.Id).Skip(from).Take(size);
     }
 }

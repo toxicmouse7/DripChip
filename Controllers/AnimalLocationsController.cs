@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using DripChip.Authentication;
+using DripChip.Models.Entities;
 using DripChip.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace DripChip.Controllers;
 
@@ -11,11 +10,11 @@ namespace DripChip.Controllers;
 [Route("animals/{animalId:min(1)}/locations")]
 public class AnimalLocationsController : ControllerBase
 {
-    private readonly IAnimalsService _animalsService;
+    private readonly IRepository<Animal> _animalsRepository;
 
-    public AnimalLocationsController(IAnimalsService animalsService)
+    public AnimalLocationsController(IRepository<Animal> animalsRepository)
     {
-        _animalsService = animalsService;
+        _animalsRepository = animalsRepository;
     }
 
     [HttpGet]
@@ -26,7 +25,7 @@ public class AnimalLocationsController : ControllerBase
         [FromQuery] uint from = 0,
         [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
-        var animal = _animalsService.GetAnimalInformation(animalId);
+        var animal = _animalsRepository.Get(animalId);
         if (animal is null)
             return NotFound();
 

@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using DripChip.Authentication;
-using DripChip.Models;
+using DripChip.Models.Entities;
 using DripChip.Models.SearchInformation;
 using DripChip.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DripChip.Controllers;
@@ -12,11 +11,14 @@ namespace DripChip.Controllers;
 [Route("animals")]
 public class AnimalsController : ControllerBase
 {
-    private readonly IAnimalsService _animalsService;
+    private readonly IRepository<Animal> _animalsRepository;
+    private readonly IFilterable<Animal, AnimalsSearchInformation> _animalsFilter;
 
-    public AnimalsController(IAnimalsService animalsService)
+    public AnimalsController(IRepository<Animal> animalsRepository,
+        IFilterable<Animal, AnimalsSearchInformation> animalsFilter)
     {
-        _animalsService = animalsService;
+        _animalsRepository = animalsRepository;
+        _animalsFilter = animalsFilter;
     }
 
     [HttpGet]
@@ -27,7 +29,7 @@ public class AnimalsController : ControllerBase
         if (animalId is null or 0)
             return BadRequest();
 
-        var animal = _animalsService.GetAnimalInformation(animalId.Value);
+        var animal = _animalsRepository.Get(animalId.Value);
         if (animal is null)
             return NotFound();
 
@@ -41,6 +43,6 @@ public class AnimalsController : ControllerBase
         [FromQuery] uint from = 0,
         [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
-        return new JsonResult(_animalsService.SearchAnimals(animalsSearchInformation, (int) from, (int) size));
+        return new JsonResult(_animalsFilter.Search(animalsSearchInformation, (int) from, (int) size));
     }
 }

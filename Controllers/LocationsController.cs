@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using DripChip.Authentication;
+using DripChip.Models.Entities;
 using DripChip.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DripChip.Controllers;
@@ -10,9 +10,9 @@ namespace DripChip.Controllers;
 [Route("locations")]
 public class LocationsController : ControllerBase
 {
-    private readonly ILocationsService _locationsService;
+    private readonly IRepository<Location> _locationsService;
 
-    public LocationsController(ILocationsService locationsService)
+    public LocationsController(IRepository<Location> locationsService)
     {
         _locationsService = locationsService;
     }
@@ -25,7 +25,7 @@ public class LocationsController : ControllerBase
         if (pointId is null)
             return BadRequest();
 
-        var location = _locationsService.GetLocationInformation(pointId.Value);
+        var location = _locationsService.Get(pointId.Value);
         if (location is null)
             return NotFound();
 

@@ -3,9 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace DripChip.Models.Entities;
 
-public class User
+public class User : Entity
 {
-    public uint Id { get; set; }
     [Required]
     public string FirstName { get; set; } = null!;
     [Required]

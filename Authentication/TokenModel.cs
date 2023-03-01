@@ -2,7 +2,7 @@
 
 public class TokenModel
 {
-    public uint Id { get; set; }
-    public string Email { get; set; } = null!;
-    public string Password { get; set; } = null!;
+    public uint Id { get; init; }
+    public string Email { get; init; } = null!;
+    public string Password { get; init; } = null!;
 }

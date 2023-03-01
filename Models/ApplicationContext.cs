@@ -10,8 +10,6 @@ public sealed class ApplicationContext : DbContext
     public DbSet<Location> Locations { get; set; } = null!;
     public DbSet<AnimalType> AnimalTypes { get; set; } = null!;
 
-    // public DbSet<VisitedLocation> VisitedLocations { get; set; } = null!;
-
     public ApplicationContext(DbContextOptions<ApplicationContext> options)
         : base(options)
     {

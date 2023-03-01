@@ -1,5 +1,7 @@
 using DripChip.Authentication;
 using DripChip.Models;
+using DripChip.Models.Entities;
+using DripChip.Models.SearchInformation;
 using DripChip.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +13,14 @@ builder.Services.AddControllers();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlite(connectionString));
-builder.Services.AddTransient<IAccountsService, AccountsService>();
-builder.Services.AddTransient<IAnimalsService, AnimalsService>();
-builder.Services.AddTransient<IAnimalTypesService, AnimalTypesService>();
-builder.Services.AddTransient<ILocationsService, LocationsService>();
+
+builder.Services.AddTransient<IRepository<User>, AccountsRepository>();
+builder.Services.AddTransient<IFilterable<User, UsersSearchInformation>, AccountsRepository>();
+builder.Services.AddTransient<IRepository<Animal>, AnimalsRepository>();
+builder.Services.AddTransient<IFilterable<Animal, AnimalsSearchInformation>, AnimalsRepository>();
+builder.Services.AddTransient<IRepository<AnimalType>, AnimalTypesRepository>();
+builder.Services.AddTransient<IRepository<Location>, LocationsService>();
+
 builder.Services
     .AddAuthentication(
         options => options.DefaultScheme = nameof(DripChipAuthSchemeOptions))

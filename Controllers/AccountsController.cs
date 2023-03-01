@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Security.Claims;
 using DripChip.Authentication;
 using DripChip.Models.DataTransferObjects;
@@ -14,11 +15,14 @@ namespace DripChip.Controllers;
 [Route("accounts")]
 public class AccountsController : ControllerBase
 {
-    private readonly IAccountsService _accountsService;
+    private readonly IRepository<User> _accountsRepository;
+    private readonly IFilterable<User, UsersSearchInformation> _accountsFilter;
 
-    public AccountsController(IAccountsService accountsService)
+    public AccountsController(IRepository<User> accountsRepository,
+        IFilterable<User, UsersSearchInformation> accountsFilter)
     {
-        _accountsService = accountsService;
+        _accountsRepository = accountsRepository;
+        _accountsFilter = accountsFilter;
     }
 
     [HttpGet("{accountId?}")]
@@ -28,7 +32,7 @@ public class AccountsController : ControllerBase
         if (accountId is null)
             return BadRequest();
 
-        var user = _accountsService.GetUserInformation(accountId.Value);
+        var user = _accountsRepository.Get(accountId.Value);
         if (user is null)
             return NotFound();
 
@@ -42,22 +46,39 @@ public class AccountsController : ControllerBase
         if (accountId is null)
             return BadRequest();
 
-        var authenticatedId = uint.Parse(User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
+        #region Refactor
 
-        if (accountId != authenticatedId)
-            return Forbid();
-        
-        return Ok();
+        // var authenticatedId = uint.Parse(User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
+        //
+        // if (accountId != authenticatedId)
+        //     return Forbid();
+
+        #endregion
+
+        user.Id = accountId.Value;
+
+        try
+        {
+            var updateResult = _accountsRepository.Update(user);
+            return new JsonResult(updateResult);
+        }
+        catch (DuplicateNameException e)
+        {
+            return Conflict(e.Message);
+        }
+        catch (ArgumentOutOfRangeException e)
+        {
+            return Forbid(e.Message);
+        }
     }
 
     [HttpGet("search")]
     [MightBeUnauthenticated]
     public IActionResult Search([FromQuery] UsersSearchInformation searchInformation,
         [FromQuery] uint from = 0,
-        [FromQuery] [Range(1, uint.MaxValue)]
-        uint size = 10)
+        [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
-        var foundAccounts = _accountsService.SearchUsers(searchInformation, (int) from, (int) size);
+        var foundAccounts = _accountsFilter.Search(searchInformation, (int) from, (int) size);
         return new JsonResult(foundAccounts.Select(user => new UserDataTransfer(user)));
     }
 
@@ -70,7 +91,7 @@ public class AccountsController : ControllerBase
 
         try
         {
-            var createdUser = _accountsService.CreateNew(user);
+            var createdUser = _accountsRepository.Create(user);
             return new JsonResult(new UserDataTransfer(createdUser))
             {
                 StatusCode = StatusCodes.Status201Created

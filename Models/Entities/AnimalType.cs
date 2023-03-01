@@ -1,7 +1,6 @@
 ﻿namespace DripChip.Models.Entities;
 
-public class AnimalType
+public class AnimalType : Entity
 {
-    public uint Id { get; set; }
     public string Type { get; set; } = null!;
 }

@@ -3,36 +3,36 @@ using DripChip.Models.Entities;
 
 namespace DripChip.Services;
 
-public class LocationsService : IRepository<Location>
+public class AnimalTypesRepository : IRepository<AnimalType>
 {
     private readonly ApplicationContext _applicationContext;
 
-    public LocationsService(ApplicationContext applicationContext)
+    public AnimalTypesRepository(ApplicationContext applicationContext)
     {
         _applicationContext = applicationContext;
     }
 
-    public Location? Get(uint id)
+    public AnimalType? Get(uint id)
     {
-        return _applicationContext.Locations.Find(id);
+        return _applicationContext.AnimalTypes.Find(id);
     }
 
-    public Location? Get(Func<Location, bool> predicate)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Location Update(Location entity)
+    public AnimalType? Get(Func<AnimalType, bool> predicate)
     {
         throw new NotImplementedException();
     }
 
-    public Location Create(Location entity)
+    public AnimalType Update(AnimalType entity)
     {
         throw new NotImplementedException();
     }
 
-    public void Delete(Location entity)
+    public AnimalType Create(AnimalType entity)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Delete(AnimalType entity)
     {
         throw new NotImplementedException();
     }

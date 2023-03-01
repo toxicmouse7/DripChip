@@ -1,24 +1,43 @@
-﻿using DripChip.Models;
+﻿using System.Data;
+using DripChip.Models;
 using DripChip.Models.Entities;
 using DripChip.Models.SearchInformation;
 
 namespace DripChip.Services;
 
-public class AccountsService : IAccountsService
+public class AccountsRepository : IRepository<User>, IFilterable<User, UsersSearchInformation>
 {
     private readonly ApplicationContext _applicationContext;
 
-    public AccountsService(ApplicationContext applicationContext)
+    public AccountsRepository(ApplicationContext applicationContext)
     {
         _applicationContext = applicationContext;
     }
 
-    public User? GetUserInformation(uint id)
+    public User? Get(uint id)
     {
         return _applicationContext.Users.Find(id);
     }
 
-    public User[] SearchUsers(UsersSearchInformation searchInformation, int from, int size)
+    public User Update(User entity)
+    {
+        var foundUser = _applicationContext.Users.Find(entity.Id);
+        if (foundUser is null)
+            throw new ArgumentOutOfRangeException(nameof(entity.Id),"User with this id was not found");
+        
+        if (_applicationContext.Users.SingleOrDefault(user => user.Email == entity.Email) != foundUser)
+            throw new DuplicateNameException("User with this email already exists");
+
+        foundUser.Email = entity.Email;
+        foundUser.FirstName = entity.FirstName;
+        foundUser.LastName = entity.LastName;
+        foundUser.Password = entity.Password;
+
+        _applicationContext.SaveChanges();
+        return foundUser;
+    }
+
+    public IEnumerable<User> Search(UsersSearchInformation searchInformation, int from, int size)
     {
         var users = _applicationContext.Users.AsQueryable();
 
@@ -29,10 +48,10 @@ public class AccountsService : IAccountsService
                 user => user.LastName.ToLower().Contains(searchInformation.LastName!.ToLower()))
             .WhereIf(searchInformation.Email != null,
                 user => user.Email.ToLower().Contains(searchInformation.Email!.ToLower()))
-            .OrderBy(user => user.Id).Skip(from).Take(size).ToArray();
+            .OrderBy(user => user.Id).Skip(from).Take(size);
     }
 
-    public User CreateNew(User user)
+    public User Create(User user)
     {
         if (_applicationContext.Users.FirstOrDefault(existingUser => existingUser.Email == user.Email) is not null)
             throw new ArgumentException($"User with email {user.Email} already exists");
@@ -42,7 +61,12 @@ public class AccountsService : IAccountsService
         return createdUser.Entity;
     }
 
-    public User? FindBy(Func<User, bool> pred)
+    public void Delete(User entity)
+    {
+        throw new NotImplementedException();
+    }
+
+    public User? Get(Func<User, bool> pred)
     {
         return _applicationContext.Users.FirstOrDefault(pred);
     }
