@@ -1,10 +1,10 @@
 ﻿using DripChip.Models;
 using DripChip.Models.Entities;
-using DripChip.Models.SearchInformation;
+using DripChip.Models.FilterData;
 
 namespace DripChip.Services;
 
-public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, AnimalsSearchInformation>
+public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, AnimalsFilterData>
 {
     private readonly ApplicationContext _applicationContext;
 
@@ -33,30 +33,30 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
         throw new NotImplementedException();
     }
 
-    public void Delete(Animal entity)
+    public void Delete(uint id)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<Animal> Search(AnimalsSearchInformation animalsSearchInformation, int from, int size)
+    public IEnumerable<Animal> Search(AnimalsFilterData animalsFilterData, int from, int size)
     {
         var animals = _applicationContext.Animals;
 
         return animals
             // .Include(animal => animal.AnimalChipper)
             // .Include(animal => animal.ChippingLocation)
-            .WhereIf(animalsSearchInformation.StartDateTime != null,
-                animal => animal.ChippingDateTime >= animalsSearchInformation.StartDateTime)
-            .WhereIf(animalsSearchInformation.EndDateTime != null,
-                animal => animal.ChippingDateTime <= animalsSearchInformation.EndDateTime)
-            .WhereIf(animalsSearchInformation.ChipperId != null,
-                animal => animal.AnimalChipper.Id == animalsSearchInformation.ChipperId)
-            .WhereIf(animalsSearchInformation.ChippingLocationId != null,
-                animal => animal.ChippingLocation.Id == animalsSearchInformation.ChippingLocationId)
-            .WhereIf(animalsSearchInformation.LifeStatus != null,
-                animal => animal.AnimalLifeStatus == animalsSearchInformation.LifeStatus)
-            .WhereIf(animalsSearchInformation.Gender != null,
-                animal => animal.AnimalGender == animalsSearchInformation.Gender)
+            .WhereIf(animalsFilterData.StartDateTime != null,
+                animal => animal.ChippingDateTime >= animalsFilterData.StartDateTime)
+            .WhereIf(animalsFilterData.EndDateTime != null,
+                animal => animal.ChippingDateTime <= animalsFilterData.EndDateTime)
+            .WhereIf(animalsFilterData.ChipperId != null,
+                animal => animal.AnimalChipper.Id == animalsFilterData.ChipperId)
+            .WhereIf(animalsFilterData.ChippingLocationId != null,
+                animal => animal.ChippingLocation.Id == animalsFilterData.ChippingLocationId)
+            .WhereIf(animalsFilterData.LifeStatus != null,
+                animal => animal.AnimalLifeStatus == animalsFilterData.LifeStatus)
+            .WhereIf(animalsFilterData.Gender != null,
+                animal => animal.AnimalGender == animalsFilterData.Gender)
             .OrderBy(animal => animal.Id).Skip(from).Take(size);
     }
 }

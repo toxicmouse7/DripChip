@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using DripChip.Authentication;
 using DripChip.Models.Entities;
-using DripChip.Models.SearchInformation;
+using DripChip.Models.FilterData;
 using DripChip.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,10 +12,10 @@ namespace DripChip.Controllers;
 public class AnimalsController : ControllerBase
 {
     private readonly IRepository<Animal> _animalsRepository;
-    private readonly IFilterable<Animal, AnimalsSearchInformation> _animalsFilter;
+    private readonly IFilterable<Animal, AnimalsFilterData> _animalsFilter;
 
     public AnimalsController(IRepository<Animal> animalsRepository,
-        IFilterable<Animal, AnimalsSearchInformation> animalsFilter)
+        IFilterable<Animal, AnimalsFilterData> animalsFilter)
     {
         _animalsRepository = animalsRepository;
         _animalsFilter = animalsFilter;
@@ -39,10 +39,10 @@ public class AnimalsController : ControllerBase
     [HttpGet]
     [Route("search")]
     [MightBeUnauthenticated]
-    public IActionResult SearchAnimals([FromQuery] AnimalsSearchInformation animalsSearchInformation,
+    public IActionResult SearchAnimals([FromQuery] AnimalsFilterData animalsFilterData,
         [FromQuery] uint from = 0,
         [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
-        return new JsonResult(_animalsFilter.Search(animalsSearchInformation, (int) from, (int) size));
+        return new JsonResult(_animalsFilter.Search(animalsFilterData, (int) from, (int) size));
     }
 }

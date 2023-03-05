@@ -1,2 +1,5 @@
-bin/
-obj/
+Migrations
+bin
+obj
+.idea
+database.sqlite3

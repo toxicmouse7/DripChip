@@ -17,7 +17,7 @@ namespace DripChip.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.3");
 
-            modelBuilder.Entity("DripChip.Models.Animal", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.Animal", b =>
                 {
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd()
@@ -59,7 +59,7 @@ namespace DripChip.Migrations
                     b.ToTable("Animals");
                 });
 
-            modelBuilder.Entity("DripChip.Models.AnimalType", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.AnimalType", b =>
                 {
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd()
@@ -79,7 +79,7 @@ namespace DripChip.Migrations
                     b.ToTable("AnimalTypes");
                 });
 
-            modelBuilder.Entity("DripChip.Models.Location", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.Location", b =>
                 {
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd()
@@ -96,7 +96,7 @@ namespace DripChip.Migrations
                     b.ToTable("Locations");
                 });
 
-            modelBuilder.Entity("DripChip.Models.User", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.User", b =>
                 {
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd()
@@ -123,7 +123,7 @@ namespace DripChip.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("DripChip.Models.VisitedLocation", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.VisitedLocation", b =>
                 {
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd()
@@ -147,15 +147,15 @@ namespace DripChip.Migrations
                     b.ToTable("VisitedLocation");
                 });
 
-            modelBuilder.Entity("DripChip.Models.Animal", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.Animal", b =>
                 {
-                    b.HasOne("DripChip.Models.User", "AnimalChipper")
-                        .WithMany()
+                    b.HasOne("DripChip.Models.Entities.User", "AnimalChipper")
+                        .WithMany("ChippedAnimals")
                         .HasForeignKey("AnimalChipperId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DripChip.Models.Location", "ChippingLocation")
+                    b.HasOne("DripChip.Models.Entities.Location", "ChippingLocation")
                         .WithMany()
                         .HasForeignKey("ChippingLocationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -166,20 +166,20 @@ namespace DripChip.Migrations
                     b.Navigation("ChippingLocation");
                 });
 
-            modelBuilder.Entity("DripChip.Models.AnimalType", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.AnimalType", b =>
                 {
-                    b.HasOne("DripChip.Models.Animal", null)
+                    b.HasOne("DripChip.Models.Entities.Animal", null)
                         .WithMany("Types")
                         .HasForeignKey("AnimalId");
                 });
 
-            modelBuilder.Entity("DripChip.Models.VisitedLocation", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.VisitedLocation", b =>
                 {
-                    b.HasOne("DripChip.Models.Animal", null)
+                    b.HasOne("DripChip.Models.Entities.Animal", null)
                         .WithMany("VisitedLocations")
                         .HasForeignKey("AnimalId");
 
-                    b.HasOne("DripChip.Models.Location", "Location")
+                    b.HasOne("DripChip.Models.Entities.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -188,11 +188,16 @@ namespace DripChip.Migrations
                     b.Navigation("Location");
                 });
 
-            modelBuilder.Entity("DripChip.Models.Animal", b =>
+            modelBuilder.Entity("DripChip.Models.Entities.Animal", b =>
                 {
                     b.Navigation("Types");
 
                     b.Navigation("VisitedLocations");
+                });
+
+            modelBuilder.Entity("DripChip.Models.Entities.User", b =>
+                {
+                    b.Navigation("ChippedAnimals");
                 });
 #pragma warning restore 612, 618
         }

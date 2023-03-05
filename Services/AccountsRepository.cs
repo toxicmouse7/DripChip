@@ -1,11 +1,12 @@
 ﻿using System.Data;
+using DripChip.Exceptions;
 using DripChip.Models;
 using DripChip.Models.Entities;
-using DripChip.Models.SearchInformation;
+using DripChip.Models.FilterData;
 
 namespace DripChip.Services;
 
-public class AccountsRepository : IRepository<User>, IFilterable<User, UsersSearchInformation>
+public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilterData>
 {
     private readonly ApplicationContext _applicationContext;
 
@@ -37,17 +38,17 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersSear
         return foundUser;
     }
 
-    public IEnumerable<User> Search(UsersSearchInformation searchInformation, int from, int size)
+    public IEnumerable<User> Search(UsersFilterData filterData, int from, int size)
     {
         var users = _applicationContext.Users.AsQueryable();
 
         return users
-            .WhereIf(searchInformation.FirstName != null,
-                user => user.FirstName.ToLower().Contains(searchInformation.FirstName!.ToLower()))
-            .WhereIf(searchInformation.LastName != null,
-                user => user.LastName.ToLower().Contains(searchInformation.LastName!.ToLower()))
-            .WhereIf(searchInformation.Email != null,
-                user => user.Email.ToLower().Contains(searchInformation.Email!.ToLower()))
+            .WhereIf(filterData.FirstName != null,
+                user => user.FirstName.ToLower().Contains(filterData.FirstName!.ToLower()))
+            .WhereIf(filterData.LastName != null,
+                user => user.LastName.ToLower().Contains(filterData.LastName!.ToLower()))
+            .WhereIf(filterData.Email != null,
+                user => user.Email.ToLower().Contains(filterData.Email!.ToLower()))
             .OrderBy(user => user.Id).Skip(from).Take(size);
     }
 
@@ -61,9 +62,14 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersSear
         return createdUser.Entity;
     }
 
-    public void Delete(User entity)
+    public void Delete(uint id)
     {
-        throw new NotImplementedException();
+        var foundUser = _applicationContext.Users.Find(id);
+        if (foundUser is null)
+            throw new ArgumentException($"User with id = {id} not found");
+        if (foundUser.ChippedAnimals.Any())
+            throw new LinkedWithAnimalException();
+        _applicationContext.Users.Remove(foundUser);
     }
 
     public User? Get(Func<User, bool> pred)

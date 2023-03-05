@@ -65,9 +65,7 @@ public partial class DripChipAuthHandler : AuthenticationHandler<DripChipAuthSch
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, model.Id.ToString()),
-            new Claim(ClaimTypes.Email, model.Email),
-            new Claim(ClaimTypes.Name, model.Password)
+            new Claim(ClaimTypes.NameIdentifier, model.Id.ToString())
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, nameof(DripChipAuthHandler));

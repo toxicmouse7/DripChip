@@ -12,4 +12,6 @@ public class User : Entity
     [EmailAddress] public string Email { get; set; } = null!;
     [Required]
     public string Password { get; set; } = null!;
+    
+    public IEnumerable<Animal> ChippedAnimals { get; set; } = null!;
 }

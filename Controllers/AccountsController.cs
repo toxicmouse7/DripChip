@@ -2,9 +2,10 @@
 using System.Data;
 using System.Security.Claims;
 using DripChip.Authentication;
+using DripChip.Exceptions;
 using DripChip.Models.DataTransferObjects;
 using DripChip.Models.Entities;
-using DripChip.Models.SearchInformation;
+using DripChip.Models.FilterData;
 using DripChip.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +17,10 @@ namespace DripChip.Controllers;
 public class AccountsController : ControllerBase
 {
     private readonly IRepository<User> _accountsRepository;
-    private readonly IFilterable<User, UsersSearchInformation> _accountsFilter;
+    private readonly IFilterable<User, UsersFilterData> _accountsFilter;
 
     public AccountsController(IRepository<User> accountsRepository,
-        IFilterable<User, UsersSearchInformation> accountsFilter)
+        IFilterable<User, UsersFilterData> accountsFilter)
     {
         _accountsRepository = accountsRepository;
         _accountsFilter = accountsFilter;
@@ -36,22 +37,23 @@ public class AccountsController : ControllerBase
         if (user is null)
             return NotFound();
 
-        return new JsonResult(new UserDataTransfer(user));
+        return new JsonResult(UserMapper.ToDto(user));
     }
 
     [HttpPut("{accountId?}")]
-    // [Authorize]
+    [Authorize]
     public IActionResult UpdateUserInformation(uint? accountId, [FromBody] User user)
     {
         if (accountId is null)
             return BadRequest();
 
         #region Refactor
-
-        // var authenticatedId = uint.Parse(User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
-        //
-        // if (accountId != authenticatedId)
-        //     return Forbid();
+        
+        var authenticatedId = uint.Parse(
+            User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
+        
+        if (accountId != authenticatedId)
+            return Forbid();
 
         #endregion
 
@@ -74,25 +76,25 @@ public class AccountsController : ControllerBase
 
     [HttpGet("search")]
     [MightBeUnauthenticated]
-    public IActionResult Search([FromQuery] UsersSearchInformation searchInformation,
+    public IActionResult Search([FromQuery] UsersFilterData filterData,
         [FromQuery] uint from = 0,
         [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
-        var foundAccounts = _accountsFilter.Search(searchInformation, (int) from, (int) size);
-        return new JsonResult(foundAccounts.Select(user => new UserDataTransfer(user)));
+        var foundAccounts = _accountsFilter.Search(filterData, (int) from, (int) size);
+        return new JsonResult(foundAccounts.Select(UserMapper.ToDto));
     }
 
     [HttpPost]
     [Route("/registration")]
-    public IActionResult RegisterAccount([FromBody] User user)
+    public IActionResult RegisterAccount([FromBody] UserCreationDto user)
     {
         if (User.Identity!.IsAuthenticated)
             return Forbid();
 
         try
         {
-            var createdUser = _accountsRepository.Create(user);
-            return new JsonResult(new UserDataTransfer(createdUser))
+            var createdUser = _accountsRepository.Create(UserMapper.FromDto(user));
+            return new JsonResult(UserMapper.ToDto(createdUser))
             {
                 StatusCode = StatusCodes.Status201Created
             };
@@ -101,5 +103,38 @@ public class AccountsController : ControllerBase
         {
             return Conflict(e.Message);
         }
+    }
+
+    [HttpPost("{accountId?}")]
+    [Authorize]
+    public IActionResult DeleteAccount(uint? accountId)
+    {
+        if (accountId is null)
+            return BadRequest();
+        
+        #region Refactor
+        
+        var authenticatedId = uint.Parse(
+            User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
+        
+        if (accountId != authenticatedId)
+            return Forbid();
+
+        #endregion
+
+        try
+        {
+            _accountsRepository.Delete(accountId.Value);
+        }
+        catch (ArgumentException e)
+        {
+            return Forbid(e.Message);
+        }
+        catch (LinkedWithAnimalException e)
+        {
+            return Forbid(e.Message);
+        }
+
+        return Ok();
     }
 }

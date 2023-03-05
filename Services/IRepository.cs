@@ -9,5 +9,5 @@ public interface IRepository<T> where T : Entity
     public T Update(T entity);
     public T Create(T entity);
 
-    public void Delete(T entity);
+    public void Delete(uint id);
 }
