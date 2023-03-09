@@ -1,6 +1,4 @@
-﻿using DripChip.Models.Entities;
-
-namespace DripChip.Models.DataTransferObjects;
+﻿namespace DripChip.Models.DataTransferObjects.Accounts;
 
 public class UserDto
 {

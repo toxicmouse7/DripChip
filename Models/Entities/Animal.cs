@@ -1,4 +1,7 @@
-﻿namespace DripChip.Models.Entities;
+﻿using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
+
+namespace DripChip.Models.Entities;
 
 public class Animal : Entity
 {
@@ -15,7 +18,7 @@ public class Animal : Entity
         Dead
     }
     
-    public AnimalType[] Types { get; set; } = null!;
+    public IEnumerable<AnimalType> Types { get; set; } = null!;
     public float Weight { get; set; }
     public float Length { get; set; }
     public float Height { get; set; }

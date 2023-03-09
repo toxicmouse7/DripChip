@@ -15,9 +15,13 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilt
         _applicationContext = applicationContext;
     }
 
-    public User? Get(uint id)
+    public User Get(uint id)
     {
-        return _applicationContext.Users.Find(id);
+        var foundUser = _applicationContext.Users.Find(id);
+        if (foundUser is null)
+            throw new EntityNotFoundException();
+        
+        return foundUser;
     }
 
     public User Update(User entity)
@@ -72,8 +76,11 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilt
         _applicationContext.Users.Remove(foundUser);
     }
 
-    public User? Get(Func<User, bool> pred)
+    public User Get(Func<User, bool> pred)
     {
-        return _applicationContext.Users.FirstOrDefault(pred);
+        var foundUser = _applicationContext.Users.FirstOrDefault(pred);
+        if (foundUser is null)
+            throw new EntityNotFoundException();
+        return foundUser;
     }
 }

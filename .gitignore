@@ -3,3 +3,4 @@ bin
 obj
 .idea
 database.sqlite3
+.DS_Store/

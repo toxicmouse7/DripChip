@@ -1,3 +1,4 @@
+using DripChip.Models.DataTransferObjects.Accounts;
 using DripChip.Models.Entities;
 
 namespace DripChip.Models.DataTransferObjects;

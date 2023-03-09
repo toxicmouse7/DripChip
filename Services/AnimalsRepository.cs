@@ -1,4 +1,5 @@
-﻿using DripChip.Models;
+﻿using DripChip.Exceptions;
+using DripChip.Models;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
 
@@ -13,12 +14,16 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
         _applicationContext = applicationContext;
     }
 
-    public Animal? Get(uint id)
+    public Animal Get(uint id)
     {
-        return _applicationContext.Animals.Find(id);
+        var foundAnimal = _applicationContext.Animals.Find(id);
+        if (foundAnimal is null)
+            throw new EntityNotFoundException();
+
+        return foundAnimal;
     }
 
-    public Animal? Get(Func<Animal, bool> predicate)
+    public Animal Get(Func<Animal, bool> predicate)
     {
         throw new NotImplementedException();
     }
@@ -30,7 +35,11 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
 
     public Animal Create(Animal entity)
     {
-        throw new NotImplementedException();
+        if (entity.Types.Count() != entity.Types.Distinct().Count())
+            throw new DuplicateEntityException();
+        var createdAnimal = _applicationContext.Animals.Add(entity);
+        _applicationContext.SaveChanges();
+        return createdAnimal.Entity;
     }
 
     public void Delete(uint id)

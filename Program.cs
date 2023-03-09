@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
 using DripChip.Authentication;
 using DripChip.Models;
+using DripChip.Models.DataTransferObjects;
+using DripChip.Models.DataTransferObjects.Animals;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
 using DripChip.Services;
@@ -9,7 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
+    });
+
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlite(connectionString));
@@ -20,6 +28,8 @@ builder.Services.AddTransient<IRepository<Animal>, AnimalsRepository>();
 builder.Services.AddTransient<IFilterable<Animal, AnimalsFilterData>, AnimalsRepository>();
 builder.Services.AddTransient<IRepository<AnimalType>, AnimalTypesRepository>();
 builder.Services.AddTransient<IRepository<Location>, LocationsRepository>();
+
+builder.Services.AddTransient<IDtoMapper<Animal, AnimalCreationDto>, AnimalMapper>();
 
 builder.Services
     .AddAuthentication(

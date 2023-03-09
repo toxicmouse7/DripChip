@@ -4,6 +4,7 @@ using System.Security.Claims;
 using DripChip.Authentication;
 using DripChip.Exceptions;
 using DripChip.Models.DataTransferObjects;
+using DripChip.Models.DataTransferObjects.Accounts;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
 using DripChip.Services;

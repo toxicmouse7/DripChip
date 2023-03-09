@@ -1,4 +1,4 @@
-namespace DripChip.Models.DataTransferObjects;
+namespace DripChip.Models.DataTransferObjects.Accounts;
 
 public class UserCreationDto
 {
