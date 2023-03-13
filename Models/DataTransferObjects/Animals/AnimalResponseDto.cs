@@ -11,7 +11,7 @@ public class AnimalResponseDto
     public float Height { get; set; }
     public Animal.Gender Gender { get; set; }
     public Animal.LifeStatus LifeStatus { get; set; }
-    public DateTime ChippingDateTime { get; set; }
+    public DateTimeOffset ChippingDateTime { get; set; }
     public uint ChipperId { get; set; }
     public uint ChippingLocationId { get; set; }
     public IEnumerable<uint> VisitedLocations { get; init; } = null!;

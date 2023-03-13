@@ -21,6 +21,7 @@ public sealed class AnimalMapper : IMapper<Animal, AnimalCreationDto, AnimalUpda
 
     public Animal Create(AnimalCreationDto dto)
     {
+
         return new Animal
         {
             Types = dto.AnimalTypes.Select(x => _animalTypeRepository.Get(x)).ToList(),
@@ -29,7 +30,7 @@ public sealed class AnimalMapper : IMapper<Animal, AnimalCreationDto, AnimalUpda
             Height = dto.Height,
             AnimalGender = dto.Gender,
             AnimalLifeStatus = Animal.LifeStatus.Alive,
-            ChippingDateTime = DateTime.Now,
+            ChippingDateTime = DateTime.UtcNow,
             AnimalChipper = _userRepository.Get(dto.ChipperId),
             ChippingLocation = _locationRepository.Get(dto.ChippingLocationId),
             DeathDateTime = null

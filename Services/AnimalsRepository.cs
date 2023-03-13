@@ -20,6 +20,9 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
         var foundAnimal = _applicationContext.Animals
             .Include(x => x.ChippingLocation)
             .Include(x => x.Types)
+            .Include(x => x.AnimalChipper)
+            .Include(x => x.VisitedLocations)
+            .ThenInclude(x => x.Location)
             .FirstOrDefault(x => x.Id == id);
         if (foundAnimal is null)
             throw new EntityNotFoundException();
@@ -49,11 +52,14 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
     public void Delete(uint id)
     {
         var animals = _applicationContext.Animals;
-        var animal = animals.Find(id);
+        var animal = animals
+            .Include(x => x.ChippingLocation)
+            .Include(x => x.VisitedLocations)
+            .FirstOrDefault(x => x.Id == id);
         if (animal is null)
             throw new EntityNotFoundException();
 
-        if (!animal.VisitedLocations.Any())
+        if (animal.VisitedLocations.Any() && animal.VisitedLocations.Last().Location != animal.ChippingLocation)
             throw new InvalidOperationException();
 
         animals.Remove(animal);
@@ -65,6 +71,10 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
         var animals = _applicationContext.Animals;
 
         return animals
+            .Include(x => x.ChippingLocation)
+            .Include(x => x.Types)
+            .Include(x => x.AnimalChipper)
+            .Include(x => x.VisitedLocations)
             .WhereIf(animalsFilterData.StartDateTime != null,
                 animal => animal.ChippingDateTime >= animalsFilterData.StartDateTime)
             .WhereIf(animalsFilterData.EndDateTime != null,

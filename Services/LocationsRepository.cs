@@ -1,6 +1,7 @@
 ﻿using DripChip.Exceptions;
 using DripChip.Models;
 using DripChip.Models.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace DripChip.Services;
 
@@ -56,9 +57,14 @@ public class LocationsRepository : IRepository<Location>
     public void Delete(uint id)
     {
         var locations = _applicationContext.Locations;
-        var foundLocation = locations.Find(id);
+        var foundLocation = locations
+            .Include(x => x.LinkedAnimals)
+            .FirstOrDefault(x => x.Id == id);
         if (foundLocation is null)
             throw new EntityNotFoundException();
+
+        if (foundLocation.LinkedAnimals.Any())
+            throw new LinkedWithAnimalException();
         
         locations.Remove(foundLocation);
         _applicationContext.SaveChanges();

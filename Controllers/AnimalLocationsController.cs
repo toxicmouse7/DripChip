@@ -11,14 +11,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace DripChip.Controllers;
 
 [ApiController]
-[Route("animals/{animalId:min(1)}/locations")]
+[Route("animals/{animalId?}/locations")]
 public class AnimalLocationsController : ControllerBase
 {
     private readonly IRepository<Animal> _animalsRepository;
-    private readonly IRepository<VisitedLocation> _locationsRepository;
+    private readonly IRepository<Location> _locationsRepository;
 
     public AnimalLocationsController(IRepository<Animal> animalsRepository,
-        IRepository<VisitedLocation> locationsRepository)
+        IRepository<Location> locationsRepository)
     {
         _animalsRepository = animalsRepository;
         _locationsRepository = locationsRepository;
@@ -26,23 +26,26 @@ public class AnimalLocationsController : ControllerBase
 
     [HttpGet]
     [MightBeUnauthenticated]
-    public IActionResult GetVisitedLocations(uint animalId,
-        [FromQuery] DateTime? startDateTime,
-        [FromQuery] DateTime? endDateTime,
+    public IActionResult GetVisitedLocations(uint? animalId,
+        [FromQuery] DateTimeOffset? startDateTime,
+        [FromQuery] DateTimeOffset? endDateTime,
         [FromQuery] uint from = 0,
         [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
+        if (animalId is null or 0)
+            return BadRequest();
+        
         try
         {
-            var animal = _animalsRepository.Get(animalId);
+            var animal = _animalsRepository.Get(animalId.Value);
 
             return new JsonResult(
                 animal.VisitedLocations
-                    .Where(visitedLocation =>
-                        visitedLocation.Time >= startDateTime && visitedLocation.Time <= endDateTime)
+                    .WhereIf(startDateTime.HasValue, x => x.Time >= startDateTime)
+                    .WhereIf(endDateTime.HasValue, x => x.Time <= endDateTime)
                     .Select(visitedLocation => new
                     {
-                        id = animalId,
+                        id = visitedLocation.Id,
                         dateTimeOfVisitLocationPoint = visitedLocation.Time,
                         locationPointId = visitedLocation.Location.Id
                     })
@@ -66,14 +69,20 @@ public class AnimalLocationsController : ControllerBase
         try
         {
             var animal = _animalsRepository.Get(animalId.Value);
-            var visitedLocation = _locationsRepository.Get(pointId.Value);
+            var location = _locationsRepository.Get(pointId.Value);
 
             if (animal.AnimalLifeStatus == Animal.LifeStatus.Dead)
                 return BadRequest();
-            if (!animal.VisitedLocations.Any() && visitedLocation.Location == animal.ChippingLocation)
+            if (!animal.VisitedLocations.Any() && location == animal.ChippingLocation)
                 return BadRequest();
-            if (animal.VisitedLocations.Contains(visitedLocation))
+            if (animal.VisitedLocations.LastOrDefault()?.Location == location)
                 return BadRequest();
+
+            var visitedLocation = new VisitedLocation
+            {
+                Location = location,
+                Time = DateTime.Now
+            };
 
             animal.VisitedLocations.Add(visitedLocation);
             _animalsRepository.Update(animal);
@@ -81,9 +90,12 @@ public class AnimalLocationsController : ControllerBase
             return new JsonResult(new VisitedLocationsResponseDto
             {
                 Id = visitedLocation.Id,
-                DateTimeOfVisitLocationPoint = DateTime.Now,
+                DateTimeOfVisitLocationPoint = visitedLocation.Time,
                 LocationPointId = visitedLocation.Location.Id
-            });
+            })
+            {
+                StatusCode = StatusCodes.Status201Created
+            };
         }
         catch (EntityNotFoundException e)
         {
@@ -103,7 +115,8 @@ public class AnimalLocationsController : ControllerBase
         try
         {
             var animal = _animalsRepository.Get(animalId.Value);
-            var visitedLocation = _locationsRepository.Get(visitedLocationUpdateDto.VisitedLocationPointId);
+            var visitedLocation = animal.VisitedLocations
+                .Last(x => x.Id == visitedLocationUpdateDto.LocationPointId);
             var location = _locationsRepository.Get(visitedLocationUpdateDto.LocationPointId);
 
             if (!animal.VisitedLocations.Contains(visitedLocation))
@@ -115,20 +128,26 @@ public class AnimalLocationsController : ControllerBase
                 .First(x => x.l == visitedLocation).i;
 
             if (animal.VisitedLocations.FirstOrDefault() == visitedLocation &&
-                location.Location == animal.ChippingLocation)
+                location == animal.ChippingLocation)
                 return BadRequest();
-            if (animal.VisitedLocations.OrderBy(x => x.Time).ElementAtOrDefault(indexOfLocation - 1) == location
-                || animal.VisitedLocations.OrderBy(x => x.Time).ElementAtOrDefault(indexOfLocation + 1) == location)
-                return BadRequest();
+            // if (animal.VisitedLocations.OrderBy(x => x.Time).ElementAtOrDefault(indexOfLocation - 1) == location
+            //     || animal.VisitedLocations.OrderBy(x => x.Time).ElementAtOrDefault(indexOfLocation + 1) == location)
+            //     return BadRequest();
+
+            var newVisitedLocation = new VisitedLocation
+            {
+                Location = location,
+                Time = DateTime.Now
+            };
 
             animal.VisitedLocations.Remove(visitedLocation);
-            animal.VisitedLocations.Add(location);
+            animal.VisitedLocations.Add(newVisitedLocation);
             _animalsRepository.Update(animal);
             return new JsonResult(new VisitedLocationsResponseDto
             {
-                Id = location.Id,
-                DateTimeOfVisitLocationPoint = location.Time,
-                LocationPointId = location.Location.Id
+                Id =animal.VisitedLocations.Last().Id,
+                DateTimeOfVisitLocationPoint = newVisitedLocation.Time,
+                LocationPointId = location.Id
             });
         }
         catch (EntityNotFoundException e)
@@ -149,12 +168,12 @@ public class AnimalLocationsController : ControllerBase
             var animal = _animalsRepository.Get(animalId.Value);
             var visitedLocation = _locationsRepository.Get(visitedPointId.Value);
 
-            if (!animal.VisitedLocations.Contains(visitedLocation))
-                return NotFound();
-
-            animal.VisitedLocations.Remove(visitedLocation);
-            if (animal.VisitedLocations.FirstOrDefault()?.Location == animal.ChippingLocation)
-                animal.VisitedLocations.Remove(animal.VisitedLocations.First());
+            // if (!animal.VisitedLocations.Contains(visitedLocation))
+            //     return NotFound();
+            //
+            // animal.VisitedLocations.Remove(visitedLocation);
+            // if (animal.VisitedLocations.FirstOrDefault()?.Location == animal.ChippingLocation)
+            //     animal.VisitedLocations.Remove(animal.VisitedLocations.First());
 
             _animalsRepository.Update(animal);
             return Ok();

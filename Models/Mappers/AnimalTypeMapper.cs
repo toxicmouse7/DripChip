@@ -17,7 +17,8 @@ public class AnimalTypeMapper : IMapper<AnimalType, AnimalTypeCreationDto, Anima
 
     public AnimalType Update(AnimalType entity, AnimalTypeCreationDto dto)
     {
-        throw new NotImplementedException();
+        entity.Type = dto.Type;
+        return entity;
     }
 
     public AnimalTypeResponseDto ToResponse(AnimalType entity)

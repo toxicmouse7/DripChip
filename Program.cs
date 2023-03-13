@@ -10,6 +10,8 @@ using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
 using DripChip.Models.Mappers;
 using DripChip.Services;
+using DripChip.Validators;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,10 +72,22 @@ builder.Services
     .AddAuthentication(options => options.DefaultScheme = nameof(DripChipAuthSchemeOptions))
     .AddScheme<DripChipAuthSchemeOptions, DripChipAuthHandler>(nameof(DripChipAuthSchemeOptions), _ => { });
 
+builder.Services.AddScoped<IValidator<AnimalCreationDto>, AnimalCreationDtoValidator>();
+builder.Services.AddScoped<IValidator<AnimalTypeCreationDto>, AnimalTypeCreationDtoValidator>();
+builder.Services.AddScoped<IValidator<LocationCreationDto>, LocationCreationDtoValidator>();
+
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.MapControllers();
 

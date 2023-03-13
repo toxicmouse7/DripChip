@@ -2,6 +2,6 @@
 
 public class VisitedLocation : Entity
 {
-    public Location Location { get; set; } = null!;
-    public DateTime Time { get; set; }
+    public Location Location { get; init; } = null!;
+    public DateTimeOffset Time { get; init; }
 };

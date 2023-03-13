@@ -7,7 +7,6 @@ using DripChip.Models.DataTransferObjects;
 using DripChip.Models.DataTransferObjects.Accounts;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
-using DripChip.Models.Mappers;
 using DripChip.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +33,7 @@ public class AccountsController : ControllerBase
     [HttpGet("{accountId?}")]
     [MightBeUnauthenticated]
     public IActionResult GetUserInformation([Range(1, uint.MaxValue)] uint? accountId)
+    // public IActionResult GetUserInformation(EntityIdDto accountId)
     {
         if (accountId is null)
             return BadRequest();
@@ -143,7 +143,7 @@ public class AccountsController : ControllerBase
         }
         catch (LinkedWithAnimalException)
         {
-            return Forbid();
+            return BadRequest();
         }
 
         return Ok();

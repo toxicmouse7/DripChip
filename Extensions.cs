@@ -11,4 +11,10 @@ public static class Extensions
     {
         return condition ? query.Where(whereClause) : query;
     }
+    
+    public static IEnumerable<T> WhereIf<T>(this IEnumerable<T> enumerable, bool condition,
+        Func<T, bool> whereClause)
+    {
+        return condition ? enumerable.Where(whereClause) : enumerable;
+    }
 }

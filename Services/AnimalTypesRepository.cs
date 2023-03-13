@@ -33,7 +33,11 @@ public class AnimalTypesRepository : IRepository<AnimalType>
         if (animalTypes.Find(entity.Id) is null)
             throw new EntityNotFoundException();
 
+        if (animalTypes.Any(x => x.Type == entity.Type))
+            throw new DuplicateEntityException();
+
         animalTypes.Update(entity);
+        _applicationContext.SaveChanges();
     }
 
     public void Create(AnimalType entity)

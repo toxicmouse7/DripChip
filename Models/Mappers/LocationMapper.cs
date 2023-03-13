@@ -17,7 +17,9 @@ public class LocationMapper : IMapper<Location, LocationCreationDto, LocationCre
 
     public Location Update(Location entity, LocationCreationDto dto)
     {
-        throw new NotImplementedException();
+        entity.Latitude = dto.Latitude;
+        entity.Longitude = dto.Longitude;
+        return entity;
     }
 
     public LocationResponseDto ToResponse(Location entity)

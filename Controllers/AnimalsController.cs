@@ -6,8 +6,11 @@ using DripChip.Models.DataTransferObjects.AnimalTypes;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
 using DripChip.Services;
+using DripChip.Validators;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ValidationException = FluentValidation.ValidationException;
 
 namespace DripChip.Controllers;
 
@@ -18,14 +21,17 @@ public class AnimalsController : ControllerBase
     private readonly IRepository<Animal> _animalsRepository;
     private readonly IFilterable<Animal, AnimalsFilterData> _animalsFilter;
     private readonly IMapper<Animal, AnimalCreationDto, AnimalUpdateDto, AnimalResponseDto> _animalsMapper;
+    private readonly IValidator<AnimalCreationDto> _creationValidator;
 
     public AnimalsController(IRepository<Animal> animalsRepository,
         IFilterable<Animal, AnimalsFilterData> animalsFilter,
-        IMapper<Animal, AnimalCreationDto, AnimalUpdateDto, AnimalResponseDto> animalsMapper)
+        IMapper<Animal, AnimalCreationDto, AnimalUpdateDto, AnimalResponseDto> animalsMapper,
+        IValidator<AnimalCreationDto> creationValidator)
     {
         _animalsRepository = animalsRepository;
         _animalsFilter = animalsFilter;
         _animalsMapper = animalsMapper;
+        _creationValidator = creationValidator;
     }
 
     [HttpGet]
@@ -53,7 +59,10 @@ public class AnimalsController : ControllerBase
         [FromQuery] uint from = 0,
         [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
-        return new JsonResult(_animalsFilter.Search(animalsFilterData, (int) from, (int) size));
+        return new JsonResult(
+            _animalsFilter.Search(animalsFilterData, (int) from, (int) size)
+                .Select(_animalsMapper.ToResponse)
+        );
     }
 
     [HttpPost]
@@ -65,6 +74,7 @@ public class AnimalsController : ControllerBase
 
         try
         {
+            _creationValidator.ValidateAndThrow(animalCreationDto);
             var createdAnimal = _animalsMapper.Create(animalCreationDto);
             _animalsRepository.Create(createdAnimal);
             return new JsonResult(_animalsMapper.ToResponse(createdAnimal))
@@ -79,6 +89,10 @@ public class AnimalsController : ControllerBase
         catch (EntityNotFoundException e)
         {
             return NotFound(e.Message);
+        }
+        catch (ValidationException e)
+        {
+            return BadRequest(e.Message);
         }
     }
 

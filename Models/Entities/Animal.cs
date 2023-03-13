@@ -24,7 +24,7 @@ public class Animal : Entity
     public float Height { get; set; }
     public Gender AnimalGender { get; set; }
     public LifeStatus AnimalLifeStatus { get; set; }
-    public DateTime ChippingDateTime { get; set; }
+    public DateTimeOffset ChippingDateTime { get; init; }
     public User AnimalChipper { get; set; } = null!;
     public Location ChippingLocation { get; set; } = null!;
     public ICollection<VisitedLocation> VisitedLocations { get; set; }
