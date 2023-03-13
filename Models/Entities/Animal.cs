@@ -17,8 +17,8 @@ public class Animal : Entity
         Alive,
         Dead
     }
-    
-    public IEnumerable<AnimalType> Types { get; set; } = null!;
+
+    public ICollection<AnimalType> Types { get; set; } = null!;
     public float Weight { get; set; }
     public float Length { get; set; }
     public float Height { get; set; }
@@ -27,6 +27,11 @@ public class Animal : Entity
     public DateTime ChippingDateTime { get; set; }
     public User AnimalChipper { get; set; } = null!;
     public Location ChippingLocation { get; set; } = null!;
-    public VisitedLocation[] VisitedLocations { get; set; } = null!;
+    public ICollection<VisitedLocation> VisitedLocations { get; set; }
     public DateTime? DeathDateTime { get; set; }
+    
+    public Animal()
+    {
+        VisitedLocations = new List<VisitedLocation>();
+    }
 }

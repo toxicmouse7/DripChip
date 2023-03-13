@@ -24,7 +24,7 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilt
         return foundUser;
     }
 
-    public User Update(User entity)
+    public void Update(User entity)
     {
         var foundUser = _applicationContext.Users.Find(entity.Id);
         if (foundUser is null)
@@ -39,7 +39,6 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilt
         foundUser.Password = entity.Password;
 
         _applicationContext.SaveChanges();
-        return foundUser;
     }
 
     public IEnumerable<User> Search(UsersFilterData filterData, int from, int size)
@@ -56,14 +55,13 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilt
             .OrderBy(user => user.Id).Skip(from).Take(size);
     }
 
-    public User Create(User user)
+    public void Create(User user)
     {
         if (_applicationContext.Users.FirstOrDefault(existingUser => existingUser.Email == user.Email) is not null)
             throw new ArgumentException($"User with email {user.Email} already exists");
         
-        var createdUser = _applicationContext.Users.Add(user);
+        _applicationContext.Users.Add(user);
         _applicationContext.SaveChanges();
-        return createdUser.Entity;
     }
 
     public void Delete(uint id)

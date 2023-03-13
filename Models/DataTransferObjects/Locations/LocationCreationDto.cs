@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DripChip.Models.DataTransferObjects.Locations;
 
-public class LocationDto
+public class LocationCreationDto
 {
     [Range(-90, 90)]
     public double Latitude { get; set; }

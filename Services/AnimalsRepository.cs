@@ -2,6 +2,7 @@
 using DripChip.Models;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
+using Microsoft.EntityFrameworkCore;
 
 namespace DripChip.Services;
 
@@ -16,7 +17,10 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
 
     public Animal Get(uint id)
     {
-        var foundAnimal = _applicationContext.Animals.Find(id);
+        var foundAnimal = _applicationContext.Animals
+            .Include(x => x.ChippingLocation)
+            .Include(x => x.Types)
+            .FirstOrDefault(x => x.Id == id);
         if (foundAnimal is null)
             throw new EntityNotFoundException();
 
@@ -28,23 +32,32 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
         throw new NotImplementedException();
     }
 
-    public Animal Update(Animal entity)
+    public void Update(Animal entity)
     {
-        throw new NotImplementedException();
+        _applicationContext.Update(entity);
+        _applicationContext.SaveChanges();
     }
 
-    public Animal Create(Animal entity)
+    public void Create(Animal entity)
     {
-        if (entity.Types.Count() != entity.Types.Distinct().Count())
+        if (entity.Types.Count != entity.Types.Distinct().Count())
             throw new DuplicateEntityException();
-        var createdAnimal = _applicationContext.Animals.Add(entity);
+        _applicationContext.Animals.Add(entity);
         _applicationContext.SaveChanges();
-        return createdAnimal.Entity;
     }
 
     public void Delete(uint id)
     {
-        throw new NotImplementedException();
+        var animals = _applicationContext.Animals;
+        var animal = animals.Find(id);
+        if (animal is null)
+            throw new EntityNotFoundException();
+
+        if (!animal.VisitedLocations.Any())
+            throw new InvalidOperationException();
+
+        animals.Remove(animal);
+        _applicationContext.SaveChanges();
     }
 
     public IEnumerable<Animal> Search(AnimalsFilterData animalsFilterData, int from, int size)
@@ -52,8 +65,6 @@ public class AnimalsRepository : IRepository<Animal>, IFilterable<Animal, Animal
         var animals = _applicationContext.Animals;
 
         return animals
-            // .Include(animal => animal.AnimalChipper)
-            // .Include(animal => animal.ChippingLocation)
             .WhereIf(animalsFilterData.StartDateTime != null,
                 animal => animal.ChippingDateTime >= animalsFilterData.StartDateTime)
             .WhereIf(animalsFilterData.EndDateTime != null,

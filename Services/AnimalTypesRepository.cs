@@ -27,28 +27,29 @@ public class AnimalTypesRepository : IRepository<AnimalType>
         throw new NotImplementedException();
     }
 
-    public AnimalType Update(AnimalType entity)
+    public void Update(AnimalType entity)
     {
         var animalTypes = _applicationContext.AnimalTypes;
         if (animalTypes.Find(entity.Id) is null)
             throw new EntityNotFoundException();
 
-        return animalTypes.Update(entity).Entity;
+        animalTypes.Update(entity);
     }
 
-    public AnimalType Create(AnimalType entity)
+    public void Create(AnimalType entity)
     {
         var animalTypes = _applicationContext.AnimalTypes;
         if (animalTypes.Any(animalType => animalType.Type == entity.Type))
             throw new DuplicateEntityException();
 
-        return animalTypes.Add(entity).Entity;
+        animalTypes.Add(entity);
+        _applicationContext.SaveChanges();
     }
 
     public void Delete(uint id)
     {
         var animalTypes = _applicationContext.AnimalTypes;
-        
+
         var foundAnimal = animalTypes.Find(id);
         if (foundAnimal is null)
             throw new EntityNotFoundException();

@@ -2,6 +2,7 @@
 using DripChip.Authentication;
 using DripChip.Exceptions;
 using DripChip.Models.DataTransferObjects.Animals;
+using DripChip.Models.DataTransferObjects.AnimalTypes;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
 using DripChip.Services;
@@ -16,15 +17,15 @@ public class AnimalsController : ControllerBase
 {
     private readonly IRepository<Animal> _animalsRepository;
     private readonly IFilterable<Animal, AnimalsFilterData> _animalsFilter;
-    private readonly IDtoMapper<Animal, AnimalCreationDto> _animalMapper;
+    private readonly IMapper<Animal, AnimalCreationDto, AnimalUpdateDto, AnimalResponseDto> _animalsMapper;
 
     public AnimalsController(IRepository<Animal> animalsRepository,
         IFilterable<Animal, AnimalsFilterData> animalsFilter,
-        IDtoMapper<Animal, AnimalCreationDto> animalMapper)
+        IMapper<Animal, AnimalCreationDto, AnimalUpdateDto, AnimalResponseDto> animalsMapper)
     {
         _animalsRepository = animalsRepository;
         _animalsFilter = animalsFilter;
-        _animalMapper = animalMapper;
+        _animalsMapper = animalsMapper;
     }
 
     [HttpGet]
@@ -38,7 +39,7 @@ public class AnimalsController : ControllerBase
         try
         {
             var animal = _animalsRepository.Get(animalId.Value);
-            return new JsonResult(animal);
+            return new JsonResult(_animalsMapper.ToResponse(animal));
         }
         catch (EntityNotFoundException e)
         {
@@ -62,12 +63,11 @@ public class AnimalsController : ControllerBase
         if (!animalCreationDto.AnimalTypes.Any() || !Enum.IsDefined(typeof(Animal.Gender), animalCreationDto.Gender))
             return BadRequest();
 
-        _animalMapper.FromDto<AnimalCreationDto>(animalCreationDto);
-
         try
         {
-            var createdAnimal = _animalsRepository.Create(_animalMapper.FromDto(animalCreationDto));
-            return new JsonResult(createdAnimal)
+            var createdAnimal = _animalsMapper.Create(animalCreationDto);
+            _animalsRepository.Create(createdAnimal);
+            return new JsonResult(_animalsMapper.ToResponse(createdAnimal))
             {
                 StatusCode = StatusCodes.Status201Created
             };
@@ -75,6 +75,141 @@ public class AnimalsController : ControllerBase
         catch (DuplicateEntityException e)
         {
             return Conflict(e.Message);
+        }
+        catch (EntityNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpPut("{animalId?}")]
+    [Authorize]
+    public IActionResult UpdateAnimal(uint? animalId, [FromBody] AnimalUpdateDto animalUpdateDto)
+    {
+        if (animalId is null or 0)
+            return BadRequest();
+
+        try
+        {
+            var animal = _animalsRepository.Get(animalId.Value);
+            var updatedAnimal = _animalsMapper.Update(animal, animalUpdateDto);
+            _animalsRepository.Update(updatedAnimal);
+            return new JsonResult(_animalsMapper.ToResponse(updatedAnimal));
+        }
+        catch (InvalidLocationChangeException e)
+        {
+            return BadRequest(e.Message);
+        }
+        catch (IncorrectLifeStatusException e)
+        {
+            return BadRequest(e.Message);
+        }
+        catch (EntityNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpDelete("{animalId?}")]
+    [Authorize]
+    public IActionResult DeleteAnimal(uint? animalId)
+    {
+        if (animalId is null or 0)
+            return BadRequest();
+
+        try
+        {
+            _animalsRepository.Delete(animalId.Value);
+            return Ok();
+        }
+        catch (EntityNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    [HttpPost("{animalId?}/types/{typeId?}")]
+    [Authorize]
+    public IActionResult AttachType(uint? animalId, uint? typeId, IRepository<AnimalType> typeRepository)
+    {
+        if (animalId is null or 0 || typeId is null or 0)
+            return BadRequest();
+
+        try
+        {
+            var animal = _animalsRepository.Get(animalId.Value);
+            var type = typeRepository.Get(typeId.Value);
+
+            if (animal.Types.Contains(type))
+                return Conflict();
+
+            animal.Types.Add(type);
+            _animalsRepository.Update(animal);
+
+            return new JsonResult(_animalsMapper.ToResponse(animal));
+        }
+        catch (EntityNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpPut("/animals/{animalId?}/types")]
+    [Authorize]
+    public IActionResult UpdateType(uint? animalId, [FromBody] AnimalTypeUpdateDto animalTypeUpdateDto,
+        IRepository<AnimalType> typeRepository)
+    {
+        if (animalId is null or 0)
+            return BadRequest();
+
+        try
+        {
+            var animal = _animalsRepository.Get(animalId.Value);
+            var oldType = typeRepository.Get(animalTypeUpdateDto.OldTypeId);
+            var newType = typeRepository.Get(animalTypeUpdateDto.NewTypeId);
+
+            if (!animal.Types.Contains(oldType))
+                throw new EntityNotFoundException();
+            if (animal.Types.Contains(newType))
+                return Conflict();
+
+            animal.Types.Remove(oldType);
+            animal.Types.Add(newType);
+            _animalsRepository.Update(animal);
+
+            return new JsonResult(_animalsMapper.ToResponse(animal));
+        }
+        catch (EntityNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpDelete("{animalId?}/types/{typeId?}")]
+    [Authorize]
+    public IActionResult DetachType(uint? animalId, uint? typeId, IRepository<AnimalType> typeRepository)
+    {
+        if (animalId is null or 0 || typeId is null or 0)
+            return BadRequest();
+
+        try
+        {
+            var animal = _animalsRepository.Get(animalId.Value);
+            var type = typeRepository.Get(typeId.Value);
+
+            if (!animal.Types.Contains(type))
+                throw new EntityNotFoundException();
+            if (animal.Types.Count == 1)
+                return BadRequest();
+
+            animal.Types.Remove(type);
+            _animalsRepository.Update(animal);
+
+            return new JsonResult(_animalsMapper.ToResponse(animal));
         }
         catch (EntityNotFoundException e)
         {

@@ -7,6 +7,7 @@ using DripChip.Models.DataTransferObjects;
 using DripChip.Models.DataTransferObjects.Accounts;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
+using DripChip.Models.Mappers;
 using DripChip.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,12 +20,15 @@ public class AccountsController : ControllerBase
 {
     private readonly IRepository<User> _accountsRepository;
     private readonly IFilterable<User, UsersFilterData> _accountsFilter;
+    private readonly IMapper<User, UserCreationDto, UserUpdateDto, UserRepsonseDto> _userMapper;
 
     public AccountsController(IRepository<User> accountsRepository,
-        IFilterable<User, UsersFilterData> accountsFilter)
+        IFilterable<User, UsersFilterData> accountsFilter,
+        IMapper<User, UserCreationDto, UserUpdateDto, UserRepsonseDto> userMapper)
     {
         _accountsRepository = accountsRepository;
         _accountsFilter = accountsFilter;
+        _userMapper = userMapper;
     }
 
     [HttpGet("{accountId?}")]
@@ -34,18 +38,23 @@ public class AccountsController : ControllerBase
         if (accountId is null)
             return BadRequest();
 
-        var user = _accountsRepository.Get(accountId.Value);
-        if (user is null)
-            return NotFound();
+        try
+        {
+            var user = _accountsRepository.Get(accountId.Value);
+            return new JsonResult(_userMapper.ToResponse(user));
+        }
+        catch (EntityNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
 
-        return new JsonResult(UserMapper.ToDto(user));
     }
 
     [HttpPut("{accountId?}")]
     [Authorize]
-    public IActionResult UpdateUserInformation(uint? accountId, [FromBody] User user)
+    public IActionResult UpdateUserInformation(uint? accountId, [FromBody] UserUpdateDto userUpdateDto)
     {
-        if (accountId is null)
+        if (accountId is null or 0)
             return BadRequest();
 
         #region Refactor
@@ -58,12 +67,12 @@ public class AccountsController : ControllerBase
 
         #endregion
 
-        user.Id = accountId.Value;
-
         try
         {
-            var updateResult = _accountsRepository.Update(user);
-            return new JsonResult(updateResult);
+            var user = _accountsRepository.Get(accountId.Value);
+            var updatedUser = _userMapper.Update(user, userUpdateDto);
+            _accountsRepository.Update(updatedUser);
+            return new JsonResult(_userMapper.ToResponse(updatedUser));
         }
         catch (DuplicateNameException e)
         {
@@ -82,20 +91,21 @@ public class AccountsController : ControllerBase
         [FromQuery] [Range(1, uint.MaxValue)] uint size = 10)
     {
         var foundAccounts = _accountsFilter.Search(filterData, (int) from, (int) size);
-        return new JsonResult(foundAccounts.Select(UserMapper.ToDto));
+        return new JsonResult(foundAccounts.Select(_userMapper.ToResponse));
     }
 
     [HttpPost]
     [Route("/registration")]
-    public IActionResult RegisterAccount([FromBody] UserCreationDto user)
+    public IActionResult RegisterAccount([FromBody] UserCreationDto userCreationDto)
     {
         if (User.Identity!.IsAuthenticated)
             return Forbid();
 
         try
         {
-            var createdUser = _accountsRepository.Create(UserMapper.FromDto(user));
-            return new JsonResult(UserMapper.ToDto(createdUser))
+            var user = _userMapper.Create(userCreationDto);
+            _accountsRepository.Create(user);
+            return new JsonResult(_userMapper.ToResponse(user))
             {
                 StatusCode = StatusCodes.Status201Created
             };
@@ -106,7 +116,7 @@ public class AccountsController : ControllerBase
         }
     }
 
-    [HttpPost("{accountId?}")]
+    [HttpDelete("{accountId?}")]
     [Authorize]
     public IActionResult DeleteAccount(uint? accountId)
     {

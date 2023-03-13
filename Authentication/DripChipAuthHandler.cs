@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
+using DripChip.Exceptions;
 using DripChip.Models.Entities;
 using DripChip.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -46,10 +47,15 @@ public partial class DripChipAuthHandler : AuthenticationHandler<DripChipAuthSch
                 return Task.FromResult(AuthenticateResult.Fail("Incorrect data"));
 
             var (login, password) = (authData[0], authData[1]);
-            var foundUser = _accountsService.Get(user => user.Email == login && user.Password == password);
-            
-            if (foundUser is null)
-                return Task.FromResult(AuthenticateResult.Fail("Incorrect data"));
+            User foundUser;
+            try
+            {
+                foundUser = _accountsService.Get(user => user.Email == login && user.Password == password);
+            }
+            catch (EntityNotFoundException e)
+            {
+                return Task.FromResult(AuthenticateResult.Fail(e.Message));
+            }
 
             model = new TokenModel
             {

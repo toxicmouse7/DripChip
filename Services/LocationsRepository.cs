@@ -27,7 +27,7 @@ public class LocationsRepository : IRepository<Location>
         throw new NotImplementedException();
     }
 
-    public Location Update(Location entity)
+    public void Update(Location entity)
     {
         var locations = _applicationContext.Locations;
         if (locations.Find(entity.Id) is null)
@@ -39,11 +39,9 @@ public class LocationsRepository : IRepository<Location>
 
         var updatedLocation = locations.Update(entity).Entity;
         _applicationContext.SaveChanges();
-
-        return updatedLocation;
     }
 
-    public Location Create(Location entity)
+    public void Create(Location entity)
     {
         var locations = _applicationContext.Locations;
 
@@ -51,7 +49,8 @@ public class LocationsRepository : IRepository<Location>
                                  Math.Abs(loc.Latitude - entity.Latitude) < 1e-6))
             throw new DuplicateEntityException();
 
-        return _applicationContext.Locations.Add(entity).Entity;
+        locations.Add(entity);
+        _applicationContext.SaveChanges();
     }
 
     public void Delete(uint id)

@@ -1,6 +1,6 @@
 ﻿namespace DripChip.Models.DataTransferObjects.Accounts;
 
-public class UserDto
+public class UserRepsonseDto
 {
     public uint Id { get; init; }
     public string FirstName { get; init; } = null!;
