@@ -13,5 +13,10 @@ public class User : Entity
     [Required]
     public string Password { get; set; } = null!;
     
-    public IEnumerable<Animal> ChippedAnimals { get; set; } = null!;
+    public IEnumerable<Animal> ChippedAnimals { get; set; }
+
+    public User()
+    {
+        ChippedAnimals = new List<Animal>();
+    }
 }

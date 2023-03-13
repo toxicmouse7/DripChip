@@ -1,31 +1,54 @@
+using DripChip.Exceptions;
 using DripChip.Models.DataTransferObjects.Accounts;
 using DripChip.Models.Entities;
 using DripChip.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DripChip.Models.Mappers;
 
 public class UserMapper : IMapper<User, UserCreationDto, UserUpdateDto, UserRepsonseDto>
 {
-    public User Create(UserCreationDto dto)
+    private readonly IRepository<User> _userRepository;
+
+    public UserMapper(IRepository<User> userRepository)
     {
-        return new User
-        {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Email = dto.Email,
-            Password = dto.Password
-        };
+        _userRepository = userRepository;
     }
 
-    public User Update(User entity, UserUpdateDto dto)
+    public User Create(UserCreationDto dto)
     {
-        return new User
+        try
         {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Email = dto.Email,
-            Password = dto.Password
-        };
+            _userRepository.Get(existingUser => existingUser.Email == dto.Email);
+        }
+        catch (EntityNotFoundException)
+        {
+            return new User
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                Password = dto.Password
+            };
+        }
+
+        throw new DuplicateEntityException();
+    }
+
+    public User Update(User entity, [FromBody] UserUpdateDto dto)
+    {
+        if (entity is null)
+            throw new EntityNotFoundException("User with this id was not found");
+
+        if (_userRepository.Get(user => user.Email == entity.Email) != entity)
+            throw new DuplicateEntityException("User with this email already exists");
+
+        entity.Email = dto.Email;
+        entity.FirstName = dto.FirstName;
+        entity.LastName = dto.LastName;
+        entity.Password = dto.Password;
+
+        return entity;
     }
 
     public UserRepsonseDto ToResponse(User entity)
@@ -33,7 +56,7 @@ public class UserMapper : IMapper<User, UserCreationDto, UserUpdateDto, UserReps
         return new UserRepsonseDto
         {
             Id = entity.Id,
-            FirstName = entity.LastName,
+            FirstName = entity.FirstName,
             LastName = entity.LastName,
             Email = entity.Email
         };

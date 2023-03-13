@@ -51,7 +51,10 @@ public class LocationsController : ControllerBase
         {
             var location = _locationsMapper.Create(locationCreationDto);
             _locationsRepository.Create(location);
-            return new JsonResult(_locationsMapper.ToResponse(location));
+            return new JsonResult(_locationsMapper.ToResponse(location))
+            {
+                StatusCode = StatusCodes.Status201Created
+            };
         }
         catch (DuplicateEntityException e)
         {

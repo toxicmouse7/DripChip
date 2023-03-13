@@ -3,6 +3,7 @@ using DripChip.Exceptions;
 using DripChip.Models;
 using DripChip.Models.Entities;
 using DripChip.Models.FilterData;
+using Microsoft.EntityFrameworkCore;
 
 namespace DripChip.Services;
 
@@ -26,18 +27,7 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilt
 
     public void Update(User entity)
     {
-        var foundUser = _applicationContext.Users.Find(entity.Id);
-        if (foundUser is null)
-            throw new ArgumentOutOfRangeException(nameof(entity.Id),"User with this id was not found");
-        
-        if (_applicationContext.Users.SingleOrDefault(user => user.Email == entity.Email) != foundUser)
-            throw new DuplicateNameException("User with this email already exists");
-
-        foundUser.Email = entity.Email;
-        foundUser.FirstName = entity.FirstName;
-        foundUser.LastName = entity.LastName;
-        foundUser.Password = entity.Password;
-
+        _applicationContext.Users.Update(entity);
         _applicationContext.SaveChanges();
     }
 
@@ -57,21 +47,21 @@ public class AccountsRepository : IRepository<User>, IFilterable<User, UsersFilt
 
     public void Create(User user)
     {
-        if (_applicationContext.Users.FirstOrDefault(existingUser => existingUser.Email == user.Email) is not null)
-            throw new ArgumentException($"User with email {user.Email} already exists");
-        
         _applicationContext.Users.Add(user);
         _applicationContext.SaveChanges();
     }
 
     public void Delete(uint id)
     {
-        var foundUser = _applicationContext.Users.Find(id);
+        var foundUser = _applicationContext.Users
+            .Include(x => x.ChippedAnimals)
+            .FirstOrDefault(x => x.Id == id);
         if (foundUser is null)
             throw new ArgumentException($"User with id = {id} not found");
         if (foundUser.ChippedAnimals.Any())
             throw new LinkedWithAnimalException();
         _applicationContext.Users.Remove(foundUser);
+        _applicationContext.SaveChanges();
     }
 
     public User Get(Func<User, bool> pred)

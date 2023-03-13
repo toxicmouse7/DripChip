@@ -78,9 +78,9 @@ public class AccountsController : ControllerBase
         {
             return Conflict(e.Message);
         }
-        catch (ArgumentOutOfRangeException e)
+        catch (EntityNotFoundException)
         {
-            return Forbid(e.Message);
+            return Forbid();
         }
     }
 
@@ -120,7 +120,7 @@ public class AccountsController : ControllerBase
     [Authorize]
     public IActionResult DeleteAccount(uint? accountId)
     {
-        if (accountId is null)
+        if (accountId is null or 0)
             return BadRequest();
         
         #region Refactor
@@ -130,20 +130,20 @@ public class AccountsController : ControllerBase
         
         if (accountId != authenticatedId)
             return Forbid();
-
+        
         #endregion
 
         try
         {
             _accountsRepository.Delete(accountId.Value);
         }
-        catch (ArgumentException e)
+        catch (ArgumentException)
         {
-            return Forbid(e.Message);
+            return Forbid();
         }
-        catch (LinkedWithAnimalException e)
+        catch (LinkedWithAnimalException)
         {
-            return Forbid(e.Message);
+            return Forbid();
         }
 
         return Ok();
